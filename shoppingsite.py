@@ -60,25 +60,50 @@ def show_melon(melon_id):
 def show_shopping_cart():
     """Display content of shopping cart."""
 
-    # TODO: Display the contents of the shopping cart.
-
-    # The logic here will be something like:
-    #
+    # if no cart, render empty cart template
+    if "cart" not in session:
+        return render_template("cart.html")
+    
     # - get the cart dictionary from the session
-    # - create a list to hold melon objects and a variable to hold the total
-    #   cost of the order
-    # - loop over the cart dictionary, and for each melon id:
-    #    - get the corresponding Melon object
-    #    - compute the total cost for that type of melon
-    #    - add this to the order total
-    #    - add quantity and total cost as attributes on the Melon object
-    #    - add the Melon object to the list created above
-    # - pass the total order cost and the list of Melon objects to the template
-    #
-    # Make sure your function can also handle the case wherein no cart has
-    # been added to the session
+    cart = session["cart"]
 
-    return render_template("cart.html")
+    # initialize empty melon_object and order_total
+    melon_objects = []
+    order_total = 0
+    # order_total = f"${self.price:.2f}"
+
+    # loop over the cart dictionary, and for each melon id:
+    for melon_id in cart:
+        # returns the cren object from melon_types dict from melons.py read_melon_from_file
+        melon = melons.get_by_id(melon_id)
+        # get price of melon object
+        price = melon.price
+
+        # get melon_id qty in cart
+        qty = cart[melon_id]
+        print("\n"*10, "*"*10)
+        print(qty)
+        # calc total price for melon
+        melon_cost = price * qty
+
+        # add melon price to total order cost
+        order_total += melon_cost
+
+        # add quantity and total cost as attributes on the Melon object
+        # won't print to console bc of __repr__
+        melon.qty = qty
+        melon.melon_cost = melon_cost
+
+        # add updated Melon object to the list created above
+        melon_objects.append(melon)
+    
+    # print("\n"*10, "*"*10)
+    # print(cart, melon_objects, order_total)
+    # print("\n"*10)
+
+    # - pass the total order cost and the list of Melon objects to the template
+    return render_template("cart.html", order_total=order_total, melon_objects=melon_objects)
+
 
 
 @app.route("/add_to_cart/<melon_id>")
@@ -88,25 +113,15 @@ def add_to_cart(melon_id):
     When a melon is added to the cart, redirect browser to the shopping cart
     page and display a confirmation message: 'Melon successfully added to
     cart'."""
-
-    # TODO: Finish shopping cart functionality
-
-    # The logic here should be something like:
-    #
-    # - check if a "cart" exists in the session, and create one (an empty
-    #   dictionary keyed to the string "cart") if not
-    # - check if the desired melon id is the cart, and if not, put it in
-    # - increment the count for that melon id by 1
-    # - flash a success message    
+    
+    # if cart already exists, set cart var to existing cart
     if 'cart' in session:         
         cart = session['cart']     
+    # else create an empty cart
     else:         
         cart = session['cart'] = {}     
-        
-    # We could also do this with setdefault:     
-    # cart = session.setdefault("cart", {})      
-    # Add melon to cart - either increment the count (if melon already in cart)     
-    # or add to cart with a count of 1     
+          
+    # Add melon to cart - either increment the count (if melon already in cart) or add to cart with a count of 1     
     cart[melon_id] = cart.get(melon_id, 0) + 1
 
     # # if cart key in session, already have cart
@@ -122,9 +137,9 @@ def add_to_cart(melon_id):
     # else: 
     #     # if no cart, create cart with melon_id = 1 
     #     session["cart"] = {melon_id: 1}
-        
-    print(session["cart"])
-    # - redirect the user to the cart page
+
+    flash("Melon added to cart!")
+    # redirect the user to the cart page
     return redirect('/cart')
 
 
